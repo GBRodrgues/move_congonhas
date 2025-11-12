@@ -1,0 +1,21 @@
+version: "3.9"
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: move-congonhas
+    restart: unless-stopped
+    # Para uso local, mapeie a porta 448 do host -> 448 do container.
+    # No EasyPanel, você pode remover esta seção e deixar o painel mapear.
+    ports:
+      - "448:448"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:448/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    # Ajustes opcionais
+    environment:
+      - NODE_ENV=production
