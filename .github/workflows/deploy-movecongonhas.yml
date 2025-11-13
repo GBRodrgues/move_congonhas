@@ -18,30 +18,23 @@ jobs:
 
       - name: Instalar dependências e buildar (usar pnpm via Corepack)
         run: |
-          # Enable Corepack and prepare the pnpm version pinned in the repo
-          corepack enable
-          corepack prepare pnpm@10.4.1 --activate || true
-          pnpm install --frozen-lockfile
-          pnpm run build
+            # Enable Corepack and prepare the pnpm version pinned in the repo
+            corepack enable
+            corepack prepare pnpm@10.4.1 --activate || true
+            pnpm install --frozen-lockfile
+            pnpm run build
 
       - name: Deploy via rsync (write key safely + debug)
         env:
-          # Keep DEPLOY_KEY in repo secrets (private key). Replace host/user/path below if needed.
           DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
-          DEPLOY_HOST: movecongonhas.org.br
-          DEPLOY_USER: root
-          DEPLOY_PATH: /home/scube/htdocs/movecongonhas.org.br/
         run: |
           # Write private key, strip any Windows CRLFs that may be present in the secret
           echo "$DEPLOY_KEY" | tr -d '\r' > deploy_key
           chmod 600 deploy_key
 
           # Quick SSH connectivity debug (temporary): show why authentication fails if it does.
-          # This prints ssh debug information (methods tried, keys offered) without exposing the secret.
-          ssh -i deploy_key -o StrictHostKeyChecking=no -o BatchMode=yes -vvv $DEPLOY_USER@$DEPLOY_HOST 'echo SSH_OK' || true
+          # This will print ssh debug lines (methods tried, keys offered) without exposing the secret.
+          ssh -i deploy_key -o StrictHostKeyChecking=no -o BatchMode=yes -vvv root@72.60.144.123 'echo SSH_OK' || true
 
           # If the ssh debug above succeeded, run rsync. If it failed, rsync will likely also fail.
-          rsync -avz -e "ssh -i deploy_key -o StrictHostKeyChecking=no" --delete dist/ $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH
-
-          # Remove private key file before finishing (safety)
-          shred -u deploy_key || rm -f deploy_key || true
+          rsync -avz -e "ssh -i deploy_key -o StrictHostKeyChecking=no" --delete dist/ root@72.60.144.123:/home/movecongonhas/htdocs/movecongonhas.org.br/
